@@ -1,0 +1,12 @@
+# Intellij project files
+*.iml
+*.ipr
+*.iws
+.idea/
+out/
+
+# Ignore direnv
+.envrc
+
+# Ignore node.js, npm
+node_modules/
