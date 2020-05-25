@@ -13,3 +13,8 @@ node_modules/
 
 # Ignore Python venv
 venv/
+
+# Ignore terraform
+.terraform/
+terraform.tfstate*
+terraform.tfvars
