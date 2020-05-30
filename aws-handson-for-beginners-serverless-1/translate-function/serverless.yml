@@ -114,8 +114,32 @@ functions:
 #      variable2: value2
 
 # you can add CloudFormation resource templates here
-#resources:
-#  Resources:
+resources:
+  Resources:
+    # Amazon DynamoDB and Serverless - The Ultimate Guide
+    # https://www.serverless.com/dynamodb/
+    # Configure DynamoDB in Serverless
+    # https://serverless-stack.com/chapters/configure-dynamodb-in-serverless.html
+    #
+    # input_text, output_text の２つの attribute を作成時に追加したかったが、
+    # どうも作成時は key か index にならない attribute は追加できないらしい
+    # Dynamodb- Adding non key attributes
+    # https://stackoverflow.com/questions/38151687/dynamodb-adding-non-key-attributes
+    #
+    translateHistory:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: translate-history
+        AttributeDefinitions:
+          - AttributeName: timestamp
+            AttributeType: S
+        KeySchema:
+          - AttributeName: timestamp
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
 #    NewResource:
 #      Type: AWS::S3::Bucket
 #      Properties:
