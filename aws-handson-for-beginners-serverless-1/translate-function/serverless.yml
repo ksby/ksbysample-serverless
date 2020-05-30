@@ -24,7 +24,7 @@ provider:
   name: aws
   runtime: python3.8
 
-# you can overwrite defaults here
+  # you can overwrite defaults here
   stage: dev
   region: ap-northeast-1
 
@@ -33,6 +33,20 @@ provider:
 
   iamManagedPolicies:
     - arn:aws:iam::aws:policy/TranslateFullAccess
+
+  iamRoleStatements:
+    # Configure DynamoDB in Serverless
+    # https://serverless-stack.com/chapters/configure-dynamodb-in-serverless.html
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - "Fn::GetAtt": [ translateHistory, Arn ]
 
 # you can add statements to the Lambda function's IAM Role here
 #  iamRoleStatements:
@@ -66,9 +80,9 @@ provider:
 functions:
   lambda_handler:
     handler: handler.lambda_handler
-#    The following are a few example events you can configure
-#    NOTE: Please make sure to change your handler code to work with those events
-#    Check the event documentation for details
+    #    The following are a few example events you can configure
+    #    NOTE: Please make sure to change your handler code to work with those events
+    #    Check the event documentation for details
     events:
       - http:
           path: translate
