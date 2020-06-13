@@ -11,7 +11,6 @@ thumbnail_size = 320, 180
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-s3_client = boto3.client('s3')
 
 
 def resize_image(image_path, resized_path):
@@ -21,6 +20,8 @@ def resize_image(image_path, resized_path):
 
 
 def resize(event, context):
+    s3_client = boto3.client('s3')
+
     for record in event['Records']:
         bucket = record['s3']['bucket']['name']
         key = unquote_plus(record['s3']['object']['key'])
