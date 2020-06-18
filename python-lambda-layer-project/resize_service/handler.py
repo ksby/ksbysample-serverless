@@ -5,18 +5,11 @@ import uuid
 from urllib.parse import unquote_plus
 
 import boto3
-from PIL import Image
 
-thumbnail_size = 320, 180
+from image_lib import resize_utils
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
-
-def resize_image(image_path, resized_path):
-    with Image.open(image_path) as image:
-        image.thumbnail(thumbnail_size)
-        image.save(resized_path)
 
 
 def resize(event, context):
@@ -40,6 +33,6 @@ def resize(event, context):
         resized_key = '{}{}_thumb{}'.format(dirname, basename, ext)
 
         s3_client.download_file(bucket, key, download_path)
-        resize_image(download_path, resized_path)
+        resize_utils.resize_image(download_path, resized_path)
         s3_client.upload_file(resized_path, "ksbysample-resize-bucket", resized_key)
         logger.info('サムネイルを生成しました({})'.format(resized_key))
