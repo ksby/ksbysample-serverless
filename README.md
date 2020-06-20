@@ -10,3 +10,6 @@
     * [S3 にアップロードされた画像ファイルから Lambda でサムネイル画像を生成してみる](https://ksby.hatenablog.com/entry/2020/06/10/195443)
     * [resize-image-app-project プロジェクトで作成した AWS Lambda のユニットテストを作成する（local動作版）](https://ksby.hatenablog.com/entry/2020/06/13/150156)
     * [resize-image-app-project プロジェクトで作成した AWS Lambda のユニットテストを Docker コンテナ上で動作させる](https://ksby.hatenablog.com/entry/2020/06/13/222741)
+python-lambda-layer-project
+    * [外部パッケージの Pillow と独自モジュール（.py ファイル）を Lambda Layer に配置する（前編）](https://ksby.hatenablog.com/entry/2020/06/20/095652)
+    * [外部パッケージの Pillow と独自モジュール（.py ファイル）を Lambda Layer に配置する（後編）](https://ksby.hatenablog.com/entry/2020/06/20/095752)
