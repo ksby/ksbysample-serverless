@@ -1,0 +1,39 @@
+service: resize-service
+
+provider:
+  name: aws
+  runtime: python3.8
+
+  stage: dev
+  region: ap-northeast-1
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:GetObject"
+      Resource:
+        - "arn:aws:s3:::ksbysample-upload-bucket/*"
+    - Effect: "Allow"
+      Action:
+        - "s3:PutObject"
+      Resource:
+        - "arn:aws:s3:::ksbysample-resize-bucket/*"
+
+functions:
+  resize:
+    handler: handler.resize
+    events:
+      # Using existing buckets
+      # https://www.serverless.com/framework/docs/providers/aws/events/s3#using-existing-buckets
+      - s3: ksbysample-upload-bucket
+    layers:
+      # Stack名はマネジメントコンソールの CloudFormation > スタック で確認する
+      - ${cf:shared-package-layer-dev.SharedPackageLayer}
+      - ${cf:my-module-layer-dev.MyModuleLayer}
+
+resources:
+  Resources:
+    KsbysampleResizeBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ksbysample-resize-bucket

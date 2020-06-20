@@ -1,0 +1,15 @@
+# docker-compose build
+# docker-compose run --rm python-unittest
+
+version: '3'
+
+services:
+  python-unittest:
+    build:
+      context: .
+    image: lambci/lambda:build-python3.8-python-lambda-layer-project
+    container_name: python-unittest
+    volumes:
+      - .:/var/task
+      - ./my_module_layer/python:/opt/python
+    command: python -m unittest -v
