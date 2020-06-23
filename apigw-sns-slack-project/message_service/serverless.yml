@@ -1,113 +1,83 @@
-# Welcome to Serverless!
-#
-# This file is the main config file for your service.
-# It's very minimal at this point and uses default values.
-# You can always add more config options for more control.
-# We've included some commented out config examples here.
-# Just uncomment any of them to get that config option.
-#
-# For full config options, check the docs:
-#    docs.serverless.com
-#
-# Happy Coding!
-
 service: message-service
-# app and org for use with dashboard.serverless.com
-#app: your-app-name
-#org: your-org-name
 
-# You can pin your service to only deploy with a specific Serverless version
-# Check out our docs for more details
-# frameworkVersion: "=X.X.X"
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
 
 provider:
   name: aws
   runtime: python3.8
 
-# you can overwrite defaults here
-#  stage: dev
-#  region: us-east-1
+  stage: dev
+  region: ap-northeast-1
 
-# you can add statements to the Lambda function's IAM Role here
-#  iamRoleStatements:
-#    - Effect: "Allow"
-#      Action:
-#        - "s3:ListBucket"
-#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
-#    - Effect: "Allow"
-#      Action:
-#        - "s3:PutObject"
-#      Resource:
-#        Fn::Join:
-#          - ""
-#          - - "arn:aws:s3:::"
-#            - "Ref" : "ServerlessDeploymentBucket"
-#            - "/*"
-
-# you can define service wide environment variables here
-#  environment:
-#    variable1: value1
-
-# you can add packaging information here
-#package:
-#  include:
-#    - include-me.py
-#    - include-me-dir/**
-#  exclude:
-#    - exclude-me.py
-#    - exclude-me-dir/**
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "kms:GenerateDataKey"
+        - "kms:Decrypt"
+        - "sns:Publish"
+        - "sns:Subscribe"
+      Resource:
+        - !Ref NotifySlackTopic
 
 functions:
-  hello:
-    handler: handler.hello
-#    The following are a few example events you can configure
-#    NOTE: Please make sure to change your handler code to work with those events
-#    Check the event documentation for details
-#    events:
-#      - http:
-#          path: users/create
-#          method: get
-#      - websocket: $connect
-#      - s3: ${env:BUCKET}
-#      - schedule: rate(10 minutes)
-#      - sns: greeter-topic
-#      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
-#      - alexaSkill: amzn1.ask.skill.xx-xx-xx-xx
-#      - alexaSmartHome: amzn1.ask.skill.xx-xx-xx-xx
-#      - iot:
-#          sql: "SELECT * FROM 'some_topic'"
-#      - cloudwatchEvent:
-#          event:
-#            source:
-#              - "aws.ec2"
-#            detail-type:
-#              - "EC2 Instance State-change Notification"
-#            detail:
-#              state:
-#                - pending
-#      - cloudwatchLog: '/aws/lambda/hello'
-#      - cognitoUserPool:
-#          pool: MyUserPool
-#          trigger: PreSignUp
-#      - alb:
-#          listenerArn: arn:aws:elasticloadbalancing:us-east-1:XXXXXX:listener/app/my-load-balancer/50dc6c495c0c9188/
-#          priority: 1
-#          conditions:
-#            host: example.com
-#            path: /hello
+  sendMsg:
+    handler: apigw_handler.send_msg
+    environment:
+      TOPIC_ARN: !Ref NotifySlackTopic
+    events:
+      - http:
+          path: send-msg
+          method: post
+          cors: true
 
-#    Define function environment variables here
-#    environment:
-#      variable2: value2
+  notifySlack:
+    handler: sns_handler.notify_slack
+    environment:
+      SLACK_WEBHOOK_URL: ${env:SLACK_WEBHOOK_URL}
+    events:
+      # - sns: notify-slack-topic という書き方ではなく resources で定義した Topic に関連付けている
+      # ただしこの書き方だと Subscription を作成してくれないし、Topic にメッセージが publish されても Lambda 関数が実行されない
+      # ので resources で Subscription を作成して必要な権限を付与している
+      - sns:
+        arn: !Ref NotifySlackTopic
+        topicName: notify-slack-topic
 
-# you can add CloudFormation resource templates here
-#resources:
-#  Resources:
-#    NewResource:
-#      Type: AWS::S3::Bucket
-#      Properties:
-#        BucketName: my-new-bucket
-#  Outputs:
-#     NewOutput:
-#       Description: "Description for the output"
-#       Value: "Some output value"
+resources:
+  Resources:
+    NotifySlackTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: notify-slack-topic
+
+    # 以下のリソースは notifySlack 関数が作成された後に生成する
+    # 既に作成されている Topic だと自動で Subscription を作成してくれないので、以下の定義で作成する
+    NotifySlackSubscription:
+      Type: AWS::SNS::Subscription
+      DependsOn:
+        # AWS - Resources
+        # https://www.serverless.com/framework/docs/providers/aws/guide/resources/
+        # notifySlack function ならば、先頭を大文字に変えて末尾に LambdaFunction を付けた
+        # NotifySlackLambdaFunction という名称で参照できる
+        - NotifySlackLambdaFunction
+      Properties:
+        TopicArn: !Ref NotifySlackTopic
+        Endpoint:
+          Fn::GetAtt:
+            - NotifySlackLambdaFunction
+            - Arn
+        Protocol: lambda
+    # Subscription を作成するだけでは Lambda を実行できないので、以下の定義で実行できるようにする
+    NotifySlackLambdaResourcePolicy:
+      Type: AWS::Lambda::Permission
+      DependsOn:
+        - NotifySlackLambdaFunction
+      Properties:
+        FunctionName: !Ref NotifySlackLambdaFunction
+        Principal: sns.amazonaws.com
+        Action: "lambda:InvokeFunction"
+        SourceArn: !Ref NotifySlackTopic
