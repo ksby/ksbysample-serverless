@@ -13,3 +13,5 @@
 * python-lambda-layer-project
     * [外部パッケージの Pillow と独自モジュール（.py ファイル）を Lambda Layer に配置する（前編）](https://ksby.hatenablog.com/entry/2020/06/20/095652)
     * [外部パッケージの Pillow と独自モジュール（.py ファイル）を Lambda Layer に配置する（後編）](https://ksby.hatenablog.com/entry/2020/06/20/095752)
+* apigw-sns-slack-project
+    * [API Gateway で受信したメッセージを SNS 経由で Slack へ通知する](https://ksby.hatenablog.com/entry/2020/06/24/114415)
