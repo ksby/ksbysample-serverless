@@ -1,0 +1,83 @@
+service: message-service
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+
+provider:
+  name: aws
+  runtime: python3.8
+
+  stage: dev
+  region: ap-northeast-1
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "kms:GenerateDataKey"
+        - "kms:Decrypt"
+        - "sns:Publish"
+        - "sns:Subscribe"
+      Resource:
+        - !Ref NotifySlackTopic
+
+functions:
+  sendMsg:
+    handler: apigw_handler.send_msg
+    environment:
+      TOPIC_ARN: !Ref NotifySlackTopic
+    events:
+      - http:
+          path: send-msg
+          method: post
+          cors: true
+
+  notifySlack:
+    handler: sns_handler.notify_slack
+    environment:
+      SLACK_WEBHOOK_URL: ${env:SLACK_WEBHOOK_URL}
+    events:
+      # - sns: notify-slack-topic という書き方ではなく resources で定義した Topic に関連付けている
+      # ただしこの書き方だと Subscription を作成してくれないし、Topic にメッセージが publish されても Lambda 関数が実行されない
+      # ので resources で Subscription を作成して必要な権限を付与している
+      - sns:
+        arn: !Ref NotifySlackTopic
+        topicName: notify-slack-topic
+
+resources:
+  Resources:
+    NotifySlackTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: notify-slack-topic
+
+    # 以下のリソースは notifySlack 関数が作成された後に生成する
+    # 既に作成されている Topic だと自動で Subscription を作成してくれないので、以下の定義で作成する
+    NotifySlackSubscription:
+      Type: AWS::SNS::Subscription
+      DependsOn:
+        # AWS - Resources
+        # https://www.serverless.com/framework/docs/providers/aws/guide/resources/
+        # notifySlack function ならば、先頭を大文字に変えて末尾に LambdaFunction を付けた
+        # NotifySlackLambdaFunction という名称で参照できる
+        - NotifySlackLambdaFunction
+      Properties:
+        TopicArn: !Ref NotifySlackTopic
+        Endpoint:
+          Fn::GetAtt:
+            - NotifySlackLambdaFunction
+            - Arn
+        Protocol: lambda
+    # Subscription を作成するだけでは Lambda を実行できないので、以下の定義で実行できるようにする
+    NotifySlackLambdaResourcePolicy:
+      Type: AWS::Lambda::Permission
+      DependsOn:
+        - NotifySlackLambdaFunction
+      Properties:
+        FunctionName: !Ref NotifySlackLambdaFunction
+        Principal: sns.amazonaws.com
+        Action: "lambda:InvokeFunction"
+        SourceArn: !Ref NotifySlackTopic
