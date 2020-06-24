@@ -15,5 +15,5 @@
     * [外部パッケージの Pillow と独自モジュール（.py ファイル）を Lambda Layer に配置する（後編）](https://ksby.hatenablog.com/entry/2020/06/20/095752)
 * apigw-sns-slack-project
     * [API Gateway で受信したメッセージを SNS 経由で Slack へ通知する](https://ksby.hatenablog.com/entry/2020/06/24/114415)
-custom-domain-api-project
+* custom-domain-api-project
     * [serverless-domain-manager プラグインを利用して独自ドメインで API Gateway にアクセスする](https://ksby.hatenablog.com/entry/2020/06/24/174834)
