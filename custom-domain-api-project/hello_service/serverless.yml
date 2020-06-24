@@ -1,0 +1,35 @@
+service: hello-service
+
+plugins:
+  - serverless-domain-manager
+
+custom:
+  customDomain:
+    domainName: rest.ksbyzero.com
+    # stage を書かなければ provider.stage の設定が使用される
+    # stage: dev
+    # basePath を書くと https://<domainName>/<basePath>/hello がアクセスする URL になる
+    # basePath: base
+    certificateName: ksbyzero.com
+    createRoute53Record: true
+    # endpointType に edge を指定すると CloudFront ディストリビューションを設定する
+    # 今回は東京リージョンで設定するので regional を指定する
+    endpointType: regional
+    securityPolicy: tls_1_2
+    apiType: rest
+
+provider:
+  name: aws
+  runtime: python3.8
+
+  stage: dev
+  region: ap-northeast-1
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - http:
+          path: hello
+          method: get
+          cors: true
