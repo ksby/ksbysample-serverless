@@ -1,0 +1,46 @@
+service: order-service
+
+custom:
+  queueName: "SampleQueue"
+
+provider:
+  name: aws
+  runtime: python3.8
+
+  stage: dev
+  region: ap-northeast-1
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "sqs:*"
+      Resource:
+        - Fn::GetAtt: [ SampleQueue, Arn ]
+
+functions:
+  sendMsg:
+    handler: apigw_handler.send_msg
+    environment:
+      QUEUE_URL: !Ref SampleQueue
+    events:
+      - http:
+          path: send-msg
+          method: post
+          cors: true
+          request:
+            schema:
+              application/json: ${file(schema.json)}
+
+  recvMsg:
+    handler: sqs_handler.recv_msg
+    environment:
+      QUEUE_URL: !Ref SampleQueue
+    events:
+      - schedule: rate(1 minute)
+
+resources:
+  Resources:
+    SampleQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: "${self:custom.queueName}"

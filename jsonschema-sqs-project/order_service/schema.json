@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "orderedItem": {
+      "type": "object",
+      "properties": {
+        "orderItemNumber": {
+          "type": "string",
+          "pattern": "^[0-9]+$"
+        },
+        "identifier": {
+          "type": "string",
+          "enum": [
+            "book",
+            "furniture"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 10
+        },
+        "orderQuantity": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 999
+        },
+        "price": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "orderItemNumber",
+        "identifier",
+        "name",
+        "orderQuantity",
+        "price"
+      ]
+    }
+  },
+  "title": "Order",
+  "type": "object",
+  "properties": {
+    "orderNumber": {
+      "type": "string",
+      "pattern": "^[0-9]+$"
+    },
+    "orderDate": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "isGift": {
+      "type": "boolean"
+    },
+    "orderedItem": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/definitions/orderedItem"
+      }
+    }
+  },
+  "required": [
+    "orderNumber",
+    "orderDate",
+    "orderedItem"
+  ]
+}
