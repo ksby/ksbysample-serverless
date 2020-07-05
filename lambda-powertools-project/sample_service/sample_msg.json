@@ -1,0 +1,21 @@
+{
+  "orderNumber": "1",
+  "orderDate": "2020-06-28",
+  "isGift": false,
+  "orderedItem": [
+    {
+      "orderItemNumber": "1",
+      "orderQuantity": 3,
+      "productID": "1001",
+      "category": "book",
+      "price": 3800
+    },
+    {
+      "orderItemNumber": "2",
+      "orderQuantity": 1,
+      "productID": "3052",
+      "category": "camera",
+      "price": 150000
+    }
+  ]
+}
