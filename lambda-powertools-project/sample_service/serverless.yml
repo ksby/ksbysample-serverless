@@ -4,6 +4,8 @@ plugins:
   - serverless-python-requirements
 
 custom:
+  queueName: "SampleQueue"
+  topicName: "SampleTopic"
   pythonRequirements:
     dockerizePip: true
 
@@ -14,13 +16,51 @@ provider:
   region: ap-northeast-1
   environment:
     # aws-lambda-powertools 用環境変数
-    LOG_LEVEL: INFO
-    POWERTOOLS_LOGGER_LOG_EVENT: false
+    LOG_LEVEL: DEBUG
+    POWERTOOLS_LOGGER_LOG_EVENT: true
     POWERTOOLS_METRICS_NAMESPACE: lambda-powertools-project
     POWERTOOLS_SERVICE_NAME: sample-service
   tracing:
     apiGateway: true
     lambda: true
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - Fn::GetAtt: [ SampleTable, Arn ]
+    - Effect: Allow
+      Action:
+        - kms:GenerateDataKey
+        - kms:Decrypt
+        - sqs:*
+      Resource:
+        - Fn::GetAtt: [ SampleQueue, Arn ]
+    - Effect: Allow
+      Action:
+        - kms:GenerateDataKey
+        - kms:Decrypt
+        - sns:Publish
+        - sns:Subscribe
+      Resource:
+        - !Ref SampleTopic
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+        - lambda:InvokeAsync
+      Resource:
+        - Fn::Join:
+          - ":"
+          - - "arn:aws:lambda"
+            - Ref: "AWS::Region"
+            - Ref: "AWS::AccountId"
+            - "function:*"
 
 functions:
   recvMsg:
@@ -34,4 +74,87 @@ functions:
             schema:
               application/json: ${file(msg_schema.json)}
     environment:
-      LOG_LEVEL: DEBUG
+      QUEUE_URL: !Ref SampleQueue
+      TOPIC_ARN: !Ref SampleTopic
+
+  processSampleTableStream:
+    handler: dynamodb_handler.process_sample_table_stream
+    events:
+      - stream:
+          type: dynamodb
+          batchSize: 1
+          startingPosition: TRIM_HORIZON
+          arn:
+            Fn::GetAtt: [ SampleTable, StreamArn ]
+
+  processSampleQueue:
+    handler: sqs_handler.process_sample_queue
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: [ SampleQueue, Arn ]
+
+  processSampleTopic:
+    handler: sns_handler.process_sample_topic
+    events:
+      - sns:
+        arn: !Ref SampleTopic
+        topicName: "${self:custom.topicName}"
+
+  processSync:
+    handler: sync_handler.process_sync
+
+  processAsync:
+    handler: async_handler.process_async
+
+resources:
+  Resources:
+    SampleTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: sample-table
+        AttributeDefinitions:
+          - AttributeName: orderNumber
+            AttributeType: S
+          - AttributeName: orderItemNumber
+            AttributeType: S
+        KeySchema:
+          - AttributeName: orderNumber
+            KeyType: HASH
+          - AttributeName: orderItemNumber
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        StreamSpecification:
+          StreamViewType: NEW_IMAGE
+
+    SampleQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: "${self:custom.queueName}"
+
+    SampleTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: "${self:custom.topicName}"
+    SampleSubscription:
+      Type: AWS::SNS::Subscription
+      DependsOn:
+        - ProcessSampleTopicLambdaFunction
+      Properties:
+        TopicArn: !Ref SampleTopic
+        Endpoint:
+          Fn::GetAtt:
+            - ProcessSampleTopicLambdaFunction
+            - Arn
+        Protocol: lambda
+    SampleLambdaResourcePolicy:
+      Type: AWS::Lambda::Permission
+      DependsOn:
+        - ProcessSampleTopicLambdaFunction
+      Properties:
+        FunctionName: !Ref ProcessSampleTopicLambdaFunction
+        Principal: sns.amazonaws.com
+        Action: "lambda:InvokeFunction"
+        SourceArn: !Ref SampleTopic
