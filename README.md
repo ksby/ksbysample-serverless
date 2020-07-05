@@ -19,3 +19,7 @@
     * [serverless-domain-manager プラグインを利用して独自ドメインで API Gateway にアクセスする](https://ksby.hatenablog.com/entry/2020/06/24/174834)
 * jsonschema-sqs-project
     * [API Gateway で受信するデータを JSON Schema Validation でチェックしてから SQS へ送信する](https://ksby.hatenablog.com/entry/2020/06/28/145300)
+* lambda-powertools-project
+    * [aws-lambda-powertools を試してみる（Logger 編）](https://ksby.hatenablog.com/entry/2020/07/05/210732)
+    * [aws-lambda-powertools を試してみる（Tracer＆X-Ray 編その１）](https://ksby.hatenablog.com/entry/2020/07/05/221438)
+    * [aws-lambda-powertools を試してみる（Tracer＆X-Ray 編その２）](https://ksby.hatenablog.com/entry/2020/07/05/221608)
