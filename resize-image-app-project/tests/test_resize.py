@@ -4,8 +4,6 @@ import unittest
 import boto3
 from moto import mock_s3
 
-from resize_service import handler
-
 
 @mock_s3
 class TestResizeService(unittest.TestCase):
@@ -27,6 +25,8 @@ class TestResizeService(unittest.TestCase):
         resize_bucket.delete()
 
     def test_resize(self):
+        from resize_service import handler
+
         s3_client = boto3.client('s3')
         s3_client.upload_file('tests/sample.jpg', TestResizeService.UPLOAD_BUCKET, 'sample.jpg')
 
